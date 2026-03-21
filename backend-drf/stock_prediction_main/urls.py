@@ -16,8 +16,24 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import JsonResponse
+
+def api_root(request):
+    return JsonResponse({
+        'status': 'ok',
+        'message': 'StockLens API is running',
+        'endpoints': {
+            'register': '/api/v1/register/',
+            'login': '/api/v1/token/',
+            'token_refresh': '/api/v1/token/refresh/',
+            'stocks': '/api/v1/stocks/',
+            'market_data': '/api/v1/market-data/',
+            'currency_proxy': '/api/v1/currency-proxy/',
+        }
+    })
 
 urlpatterns = [
+    path('', api_root, name='api_root'),
     path('admin/', admin.site.urls),
 
     #Base API Endpoint
