@@ -13,3 +13,35 @@ body{
     flex: 1;
     
 }
+/* Stock Card Styles */
+.stock-card {
+    transition: all 0.3s ease;
+    border: 1px solid #343a40;
+}
+
+.stock-card:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 20px rgba(0, 123, 255, 0.3);
+    border-color: #17a2b8;
+}
+
+/* Metric Card Styles */
+.metric-card {
+    border: 1px solid #343a40;
+    transition: all 0.2s ease;
+}
+
+.metric-card:hover {
+    border-color: #17a2b8;
+    box-shadow: 0 2px 10px rgba(0, 123, 255, 0.2);
+}
+
+.metric-card h3 {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+.metric-card h5 {
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+}

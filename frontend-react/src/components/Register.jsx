@@ -2,6 +2,7 @@ import React, {useState} from 'react'
 import axios from 'axios'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSpinner } from '@fortawesome/free-solid-svg-icons'
+import {useNavigate} from 'react-router-dom'
 
 const Register = () => {
     const [username, setUsername] = useState('')
@@ -10,6 +11,7 @@ const Register = () => {
     const [errors, setErrors] = useState({})
     const [success, setSuccess] = useState(false)
     const [loading , setLoading] = useState(false)
+    const navigate = useNavigate()
 
     const handleRegistration= async(e) =>{
         e.preventDefault();
@@ -25,6 +27,10 @@ const Register = () => {
           console.log('registration successful')
           setErrors({})
           setSuccess(true)
+          // Redirect to login after 2 seconds
+          setTimeout(() => {
+            navigate('/login')
+          }, 2000)
         }catch(error){
           setErrors(error.response.data)
           console.error("registration error", error.response.data)
@@ -54,7 +60,7 @@ const Register = () => {
               <input type='password' className='form-control' placeholder='Password' value={password} onChange={(e) => setPassword(e.target.value)}/>
               <small>{errors.password && <div className='text-danger'>{errors.password}</div>}</small>
                </div>
-               {success && <div className='alert alert-success'>Registration Successful</div>}
+               {success && <div className='alert alert-success'>Registration Successful! Redirecting to login...</div>}
                {loading ? (
                   <button type='submit' className='btn btn-info d-block mx-auto' disabled><FontAwesomeIcon icon={faSpinner} spin /> Please wait...</button>
                ) : (
