@@ -36,7 +36,8 @@ const Dashboard = () => {
       const searchTerm = typeof querySearch !== 'undefined' ? querySearch : search
       if (searchTerm) params.append('search', searchTerm)
 
-      const response = await axios.get(`http://127.0.0.1:8000/api/v1/stocks/?${params.toString()}`, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1';
+      const response = await axios.get(`${apiUrl}/stocks/?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       })
 

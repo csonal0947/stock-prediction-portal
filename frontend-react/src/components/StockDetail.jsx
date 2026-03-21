@@ -25,11 +25,12 @@ const StockDetail = () => {
     }
 
     try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1';
       const params = new URLSearchParams(location.search)
       const exchange = params.get('exchange')
       const endpoint = exchange
-        ? `http://127.0.0.1:8000/api/v1/stocks/${symbol}/?exchange=${encodeURIComponent(exchange)}`
-        : `http://127.0.0.1:8000/api/v1/stocks/${symbol}/`
+        ? `${apiUrl}/stocks/${symbol}/?exchange=${encodeURIComponent(exchange)}`
+        : `${apiUrl}/stocks/${symbol}/`
 
       const response = await axios.get(endpoint, {
         headers: {

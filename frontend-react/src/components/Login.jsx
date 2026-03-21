@@ -19,7 +19,8 @@ const Login = () => {
     console.log('userData ==>', userData);
 
     try{
-      const response = await axios.post('http://127.0.0.1:8000/api/v1/token/' , userData)
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1';
+      const response = await axios.post(`${apiUrl}/token/` , userData)
       localStorage.setItem('accessToken', response.data.access)
       localStorage.setItem('refreshToken' , response.data.refresh)
       console.log('Login Succesful')

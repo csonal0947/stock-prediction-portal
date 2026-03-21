@@ -13,7 +13,8 @@ const Main = () => {
     setLoading(true);
 
     // Single call to Django backend – all market data proxied server-side
-    fetch('http://127.0.0.1:8000/api/v1/market-data/')
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1';
+    fetch(`${apiUrl}/market-data/`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
