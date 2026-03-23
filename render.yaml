@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: stocklens-backend
+    runtime: python
+    rootDir: backend-drf
+    buildCommand: sh build.sh
+    startCommand: gunicorn stock_prediction_main.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        value: e_nudzff%k_ie@%ywna9_0i9t+y12pt#ibdke3ab=v9v!rmgcz
+      - key: DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.12.3"
