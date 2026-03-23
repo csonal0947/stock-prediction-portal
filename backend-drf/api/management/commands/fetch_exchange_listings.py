@@ -55,59 +55,56 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f'NSE: Processed {total}; Created {created}; Updated {updated}'))
 
     def fetch_bse(self):
-        bse_url = config(BSE_URL_ENV, default='')
-        if not bse_url:
-            self.stdout.write(self.style.WARNING('BSE URL not configured via env var BSE_LIST_URL; attempting common fallback'))
-            # Common fallback isn't guaranteed; user can set BSE_LIST_URL in .env
-            # Try a few well-known endpoints (best-effort)
-            candidates = [
-                'https://www.bseindia.com/download/BhavCopy/Equity/EQ_ISINCODE.csv',
-                'https://www.bseindia.com/static/json/Equity.csv',
-            ]
-        else:
-            candidates = [bse_url]
-
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        total = created = updated = 0
-        succeeded = False
-        for url in candidates:
-            self.stdout.write(self.style.NOTICE(f'Trying BSE source: {url}'))
+        # BSE official JSON API – returns all active equity scrips
+        BSE_JSON_API = 'https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w?Group=&Scripcode=&industry=&segment=Equity&status=Active'
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://www.bseindia.com/',
+        }
+        self.stdout.write(self.style.NOTICE(f'Fetching BSE list from BSE JSON API'))
+        try:
+            resp = requests.get(BSE_JSON_API, headers=headers, timeout=30)
+            resp.raise_for_status()
+            data = resp.json()
+            if not isinstance(data, list) or len(data) == 0:
+                raise ValueError('Unexpected BSE JSON response format')
+        except Exception as e:
+            self.stdout.write(self.style.ERROR(f'BSE JSON API failed: {e}'))
+            # Fallback: also check env var
+            bse_url = config(BSE_URL_ENV, default='')
+            if not bse_url:
+                self.stdout.write(self.style.ERROR('Set BSE_LIST_URL env var to a CSV URL as fallback.'))
+                return
+            self.stdout.write(self.style.NOTICE(f'Trying BSE_LIST_URL fallback: {bse_url}'))
             try:
-                resp = requests.get(url, headers=headers, timeout=30)
+                resp = requests.get(bse_url, headers=headers, timeout=30)
                 resp.raise_for_status()
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f'Failed to fetch {url}: {e}'))
-                continue
+                data = resp.json() if bse_url.endswith('.json') else None
+                if data is None:
+                    f = StringIO(resp.text)
+                    data = [
+                        {'scrip_id': (row.get('SC_CODE') or row.get('SYMBOL') or row.get('scrip_id') or '')}
+                        for row in csv.DictReader(f)
+                    ]
+            except Exception as e2:
+                self.stdout.write(self.style.ERROR(f'Fallback also failed: {e2}'))
+                return
 
-            # Try to parse CSV; columns vary across sources
-            f = StringIO(resp.text)
-            try:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    # Try common field names
-                    symbol = (row.get('SC_CODE') or row.get('SC_NAME') or row.get('SCRIP') or row.get('symbol') or '')
-                    # Some BSE CSVs have ISIN and security codes; skip non-symbol rows
-                    if not symbol:
-                        continue
-                    symbol = str(symbol).strip()
-                    # Many BSE tickers on Yahoo use .BO suffix; store symbol without suffix
-                    total += 1
-                    obj, was_created = StockMetric.objects.update_or_create(
-                        symbol=symbol.upper(),
-                        exchange='BSE',
-                        defaults={}
-                    )
-                    if was_created:
-                        created += 1
-                    else:
-                        updated += 1
-                succeeded = True
-                break
-            except Exception as e:
-                self.stdout.write(self.style.WARNING(f'Error parsing CSV from {url}: {e}'))
+        total = created = updated = 0
+        for row in data:
+            # The official API uses 'scrip_id' as the ticker symbol
+            symbol = (row.get('scrip_id') or row.get('SYMBOL') or row.get('SC_CODE') or '').strip()
+            if not symbol or symbol.isdigit():
                 continue
+            total += 1
+            obj, was_created = StockMetric.objects.update_or_create(
+                symbol=symbol.upper(),
+                exchange='BSE',
+                defaults={}
+            )
+            if was_created:
+                created += 1
+            else:
+                updated += 1
 
-        if not succeeded:
-            self.stdout.write(self.style.ERROR('Failed to fetch/parse any BSE listing. Set BSE_LIST_URL in your .env to a CSV URL and retry.'))
-        else:
-            self.stdout.write(self.style.SUCCESS(f'BSE: Processed {total}; Created {created}; Updated {updated}'))
+        self.stdout.write(self.style.SUCCESS(f'BSE: Processed {total}; Created {created}; Updated {updated}'))
